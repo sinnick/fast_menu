@@ -1,0 +1,52 @@
+# Fast Menu Configuration
+
+[general]
+# Theme: "dark" or "light"
+theme = "dark"
+# Maximum number of results to show
+max_results = 10
+
+[modules]
+# Enable/disable modules
+app_launcher = true
+file_search = true
+commands = true
+
+[file_search]
+# Directories to search for files (~ is expanded to home)
+directories = ["~", "~/Documents", "~/Projects", "~/Downloads"]
+# Maximum depth to search
+max_depth = 3
+
+# Custom commands
+# You can add your own commands here
+
+[[commands]]
+name = "Lock Screen"
+command = "loginctl lock-session"
+icon = "system-lock-screen"
+description = "Lock the screen"
+
+[[commands]]
+name = "Suspend"
+command = "systemctl suspend"
+icon = "system-suspend"
+description = "Suspend the system"
+
+[[commands]]
+name = "Shutdown"
+command = "systemctl poweroff"
+icon = "system-shutdown"
+description = "Shutdown the system"
+
+[[commands]]
+name = "Reboot"
+command = "systemctl reboot"
+icon = "system-reboot"
+description = "Reboot the system"
+
+[[commands]]
+name = "Logout"
+command = "gnome-session-quit --logout --no-prompt"
+icon = "system-log-out"
+description = "Log out of the session"

@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Fast Menu
+Comment=A fast, extensible application launcher for Wayland
+Exec=fast-menu
+Icon=utilities-terminal
+Terminal=false
+Type=Application
+Categories=Utility;
+Keywords=launcher;menu;search;applications;
+StartupNotify=false

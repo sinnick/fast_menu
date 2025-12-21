@@ -1,0 +1,84 @@
+/* Fast Menu - Light Theme (Catppuccin Latte) */
+
+.fast-menu-window {
+    background-color: #eff1f5;
+    border-radius: 12px;
+    border: 1px solid #ccd0da;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.main-container {
+    padding: 8px;
+}
+
+.search-entry {
+    font-size: 18px;
+    padding: 12px 16px;
+    background-color: #e6e9ef;
+    color: #4c4f69;
+    border: none;
+    border-radius: 8px;
+    margin-bottom: 8px;
+}
+
+.search-entry:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #1e66f5;
+}
+
+.results-list {
+    background-color: transparent;
+    border-radius: 8px;
+}
+
+.result-row {
+    background-color: transparent;
+    border-radius: 8px;
+    margin: 2px 0;
+}
+
+.result-row:selected {
+    background-color: #ccd0da;
+}
+
+.result-row:hover {
+    background-color: #dce0e8;
+}
+
+.result-icon {
+    opacity: 0.9;
+}
+
+.result-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #4c4f69;
+}
+
+.result-description {
+    font-size: 12px;
+    color: #6c6f85;
+}
+
+.result-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.badge-app {
+    background-color: #1e66f5;
+    color: #eff1f5;
+}
+
+.badge-file {
+    background-color: #40a02b;
+    color: #eff1f5;
+}
+
+.badge-command {
+    background-color: #df8e1d;
+    color: #eff1f5;
+}
