@@ -28,7 +28,7 @@ impl FastMenuApp {
         let command = std::rc::Rc::new(RefCell::new(command));
 
         self.app.connect_startup(|_app| {
-            crate::ui::style::load_css();
+            // CSS loading moved to on_activate (display not ready here)
         });
 
         let cmd_for_activate = command.clone();
@@ -82,6 +82,9 @@ impl FastMenuApp {
                 let registry = ModuleRegistry::new(&config);
                 let window = FastMenuWindow::new(app, config, registry);
                 *window_cell.borrow_mut() = Some(window);
+
+                // Load CSS after window is created (display now exists)
+                crate::ui::style::load_css();
             }
 
             if let Some(window) = window_cell.borrow().as_ref() {

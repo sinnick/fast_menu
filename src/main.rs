@@ -31,6 +31,7 @@ pub enum Commands {
 }
 
 fn main() -> glib::ExitCode {
+    eprintln!("[MAIN] Starting fast-menu...");
     env_logger::init();
 
 

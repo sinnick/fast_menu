@@ -8,6 +8,7 @@ use gtk4::{
     Application, Box as GtkBox, Entry, EventControllerKey, Label, ListBox,
     Orientation, ScrolledWindow, SelectionMode, Window,
 };
+use gtk4_layer_shell::{Edge, Layer, LayerShell};
 use std::cell::RefCell;
 use std::rc::Rc;
 
@@ -28,8 +29,44 @@ impl FastMenuWindow {
             .default_height(380)
             .decorated(false)
             .resizable(false)
-            .modal(true)
             .build();
+
+        // Check if we're on Wayland and layer-shell is supported
+        let display = gtk4::prelude::WidgetExt::display(&window);
+        let is_wayland = gtk4_layer_shell::is_supported();
+        eprintln!("[DEBUG] Layer shell supported: {}", is_wayland);
+
+        if is_wayland {
+            // Initialize layer shell for proper Wayland positioning
+            window.init_layer_shell();
+            window.set_layer(Layer::Overlay);
+            window.set_keyboard_mode(gtk4_layer_shell::KeyboardMode::Exclusive);
+
+            // Calculate margins to center the window on screen
+            let n_monitors = display.monitors().n_items();
+            eprintln!("[DEBUG] Found {} monitors", n_monitors);
+
+            if let Some(monitor) = display.monitors().item(0) {
+                if let Ok(monitor) = monitor.downcast::<gdk::Monitor>() {
+                    let geometry = monitor.geometry();
+                    eprintln!("[DEBUG] Monitor geometry: {}x{}", geometry.width(), geometry.height());
+                    let margin_x = (geometry.width() - 650) / 2;
+                    let margin_y = (geometry.height() - 380) / 2;
+                    eprintln!("[DEBUG] Setting margins: x={}, y={}", margin_x, margin_y);
+
+                    window.set_margin(Edge::Top, margin_y);
+                    window.set_margin(Edge::Left, margin_x);
+                }
+            }
+
+            // Anchor to top-left to position from calculated margins
+            window.set_anchor(Edge::Top, true);
+            window.set_anchor(Edge::Left, true);
+            window.set_anchor(Edge::Bottom, false);
+            window.set_anchor(Edge::Right, false);
+        }
+        // X11 centering is handled in show_window()
+
         window.add_css_class("fast-menu");
 
         // Main container
@@ -257,8 +294,96 @@ impl FastMenuWindow {
     pub fn show_window(&self) {
         self.entry.set_text("");
         self.entry.grab_focus();
-        self.window.set_visible(true);
-        self.window.present();
+
+        // Center window on X11 before showing
+        if !gtk4_layer_shell::is_supported() {
+            self.window.set_opacity(0.0);
+            self.window.set_visible(true);
+            self.window.present();
+
+            let window = self.window.clone();
+            let display = gtk4::prelude::WidgetExt::display(&self.window);
+
+            // Get mouse position to find the right monitor
+            let mouse_pos = std::process::Command::new("xdotool")
+                .args(["getmouselocation", "--shell"])
+                .output()
+                .ok()
+                .and_then(|output| {
+                    let stdout = String::from_utf8_lossy(&output.stdout);
+                    let mut x = 0i32;
+                    let mut y = 0i32;
+                    for line in stdout.lines() {
+                        if line.starts_with("X=") {
+                            x = line[2..].parse().unwrap_or(0);
+                        } else if line.starts_with("Y=") {
+                            y = line[2..].parse().unwrap_or(0);
+                        }
+                    }
+                    Some((x, y))
+                });
+
+            // Find monitor at mouse position
+            let mut target_monitor: Option<gdk::Monitor> = None;
+            let monitors = display.monitors();
+
+            if let Some((mouse_x, mouse_y)) = mouse_pos {
+                for i in 0..monitors.n_items() {
+                    if let Some(mon) = monitors.item(i) {
+                        if let Ok(monitor) = mon.downcast::<gdk::Monitor>() {
+                            let geom = monitor.geometry();
+                            if mouse_x >= geom.x() && mouse_x < geom.x() + geom.width()
+                                && mouse_y >= geom.y() && mouse_y < geom.y() + geom.height()
+                            {
+                                target_monitor = Some(monitor);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Fallback: center monitor
+            if target_monitor.is_none() && monitors.n_items() > 1 {
+                let mut monitor_list: Vec<gdk::Monitor> = Vec::new();
+                for i in 0..monitors.n_items() {
+                    if let Some(mon) = monitors.item(i) {
+                        if let Ok(monitor) = mon.downcast::<gdk::Monitor>() {
+                            monitor_list.push(monitor);
+                        }
+                    }
+                }
+                monitor_list.sort_by_key(|m| m.geometry().x());
+                if !monitor_list.is_empty() {
+                    target_monitor = Some(monitor_list.remove(monitor_list.len() / 2));
+                }
+            }
+
+            // Final fallback
+            if target_monitor.is_none() {
+                if let Some(mon) = monitors.item(0) {
+                    target_monitor = mon.downcast::<gdk::Monitor>().ok();
+                }
+            }
+
+            if let Some(monitor) = target_monitor {
+                let geometry = monitor.geometry();
+                let x = geometry.x() + (geometry.width() - 650) / 2;
+                let y = geometry.y() + (geometry.height() - 380) / 2;
+
+                glib::timeout_add_local_once(std::time::Duration::from_millis(20), move || {
+                    let _ = std::process::Command::new("xdotool")
+                        .args(["getactivewindow", "windowmove", &x.to_string(), &y.to_string()])
+                        .output();
+                    window.set_opacity(1.0);
+                });
+            } else {
+                self.window.set_opacity(1.0);
+            }
+        } else {
+            self.window.set_visible(true);
+            self.window.present();
+        }
     }
 
     pub fn hide_window(&self) {
