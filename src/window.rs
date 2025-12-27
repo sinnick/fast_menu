@@ -371,10 +371,20 @@ impl FastMenuWindow {
                 let x = geometry.x() + (geometry.width() - 650) / 2;
                 let y = geometry.y() + (geometry.height() - 380) / 2;
 
-                glib::timeout_add_local_once(std::time::Duration::from_millis(20), move || {
-                    let _ = std::process::Command::new("xdotool")
+                // Use longer delay on first show to ensure window is mapped
+                glib::timeout_add_local_once(std::time::Duration::from_millis(50), move || {
+                    // Try to find window by name if getactivewindow fails
+                    let result = std::process::Command::new("xdotool")
                         .args(["getactivewindow", "windowmove", &x.to_string(), &y.to_string()])
                         .output();
+
+                    // Fallback: search by window name
+                    if result.is_err() || !result.as_ref().map(|r| r.status.success()).unwrap_or(false) {
+                        let _ = std::process::Command::new("xdotool")
+                            .args(["search", "--name", "Fast Menu", "windowmove", &x.to_string(), &y.to_string()])
+                            .output();
+                    }
+
                     window.set_opacity(1.0);
                 });
             } else {
